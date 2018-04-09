@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.Bot.Connector;
 using Microsoft.Bot.Builder.Dialogs;
 using System.Net.Http;
-
+using ShopBot.Dialogs;
+using ShopBot;
 
 namespace Microsoft.Bot.Sample.SimpleEchoBot
 {
@@ -18,22 +19,22 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
             context.Wait(MessageReceivedAsync);
         }
 
-        public async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
+        private async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> result)
         {
-            var message = await argument;
+            var message = await result;
 
-            if (message.Text == "reset")
+            if (message.Text.Contains("products"))
             {
-                PromptDialog.Confirm(
-                    context,
-                    AfterResetAsync,
-                    "Are you sure you want to reset the count?",
-                    "Didn't get that!",
-                    promptStyle: PromptStyle.Auto);
+                context.Call(new ProductDialog(), ResumeAfterProductDialog);
+            }
+            else if (message.Text.Contains("basket"))
+            {
+                context.Call(new ManageBasketDialog(), ResumeAfterManageBasketDialog);
             }
             else
             {
-                await context.PostAsync($" Version 2: {this.count++}: You said {message.Text}");
+                await context.PostAsync("Welcome, how can we help you?");
+                await RootActions(context);
                 context.Wait(MessageReceivedAsync);
             }
         }
@@ -51,6 +52,33 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                 await context.PostAsync("Did not reset count.");
             }
             context.Wait(MessageReceivedAsync);
+        }
+
+        private static async Task RootActions(IDialogContext context)
+        {
+            await context.PostAsync("Looking for products? Managing your Basket? Or want to checkout?");
+        }
+
+        private async Task ResumeAfterProductDialog(IDialogContext context, IAwaitable<MessageBag<string>> result)
+        {
+            var message = await result;
+            switch (message.Type)
+            {
+                case MessageType.ProductOrder:
+                    await context.PostAsync($"The user ordered the product \"{message.Content}\"");
+                    break;
+                case MessageType.ProductRemoval:
+                    await context.PostAsync($"The user removed the product {message.Content}");
+                    break;
+            }
+
+            await RootActions(context);
+            context.Wait(MessageReceivedAsync);
+        }
+
+        private async Task ResumeAfterManageBasketDialog(IDialogContext context, IAwaitable<object> result)
+        {
+            //TODO
         }
 
     }
