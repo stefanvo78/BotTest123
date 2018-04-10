@@ -71,6 +71,9 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                 case MessageType.ProductRemoval:
                     await context.PostAsync($"The user removed the product {message.Content}");
                     break;
+                case MessageType.ProductDialogCancelled:
+                    await context.PostAsync("Okay where are we headed next");
+                    break;
             }
 
             await RootActions(context);
@@ -79,7 +82,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
 
         private async Task ResumeAfterManageBasketDialog(IDialogContext context, IAwaitable<object> result)
         {
-            //TODO
+            await RootActions(context);
         }
 
     }
