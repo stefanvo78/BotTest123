@@ -7,37 +7,59 @@ using System.Net.Http;
 using ShopBot.Dialogs;
 using ShopBot;
 using ShopBot.Models;
+using Microsoft.Bot.Builder.Luis;
+using Microsoft.Bot.Builder.Luis.Models;
 
 namespace Microsoft.Bot.Sample.SimpleEchoBot
 {
     [Serializable]
-    public class EchoDialog : IDialog<object>
+    [LuisModel("96bf245b-55da-4a21-82cc-f987b7223d61", "aa2c91181db640078307d445add81255")]
+    public class EchoDialog : LuisDialog<object>
     {
         protected int count = 1;
 
-        public async Task StartAsync(IDialogContext context)
+        private const string EntityProduct = "Product";
+
+        [LuisIntent("")]
+        [LuisIntent("None")]
+        [LuisIntent("Help")]
+        public async Task None(IDialogContext context, LuisResult result)
         {
-            context.Wait(MessageReceivedAsync);
+            await context.PostAsync("Welcome, how can we help you?");
+            await RootActions(context);
+
+            context.Wait(MessageReceived);
         }
 
-        private async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> result)
+        [LuisIntent("SearchProducts")]
+        public async Task SelectProducts(IDialogContext context, IAwaitable<IMessageActivity> messageActivity,
+            LuisResult result)
         {
-            var message = await result;
-
-            if (message.Text.Contains("products"))
+            var message = await messageActivity;
+            EntityRecommendation product=null;
+            if (result.TryFindEntity(EntityProduct, out product))
             {
-                context.Call(new ProductDialog(), ResumeAfterProductDialog);
-            }
-            else if (message.Text.Contains("basket"))
-            {
-                context.Call(new ManageBasketDialog(), ResumeAfterManageBasketDialog);
+                context.Call(new ProductDialog(ProductDialogAction.Add, product.Entity),
+                    ResumeAfterProductDialog);
             }
             else
             {
-                await context.PostAsync("Welcome, how can we help you?");
-                await RootActions(context);
-                context.Wait(MessageReceivedAsync);
+                context.Call(new ProductDialog(ProductDialogAction.Add), ResumeAfterProductDialog);
             }
+        }
+
+        [LuisIntent("RemoveProducts")]
+        public async Task RemoveProducts(IDialogContext context, IAwaitable<IMessageActivity> messageActivity,
+            LuisResult result)
+        {
+            context.Call(new ProductDialog(ProductDialogAction.Remove), ResumeAfterProductDialog);
+        }
+
+        [LuisIntent("ManageBasket")]
+        public async Task SearchProducts(IDialogContext context, IAwaitable<IMessageActivity> messageActivity,
+            LuisResult result)
+        {
+            context.Call(new ManageBasketDialog(), ResumeAfterManageBasketDialog);
         }
 
         public async Task AfterResetAsync(IDialogContext context, IAwaitable<bool> argument)
@@ -52,7 +74,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
             {
                 await context.PostAsync("Did not reset count.");
             }
-            context.Wait(MessageReceivedAsync);
+            context.Wait(MessageReceived);
         }
 
         private static async Task RootActions(IDialogContext context)
@@ -77,7 +99,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
             }
 
             await RootActions(context);
-            context.Wait(MessageReceivedAsync);
+            context.Wait(MessageReceived);
         }
 
         private async Task ResumeAfterManageBasketDialog(IDialogContext context, IAwaitable<object> result)

@@ -12,14 +12,63 @@ using ShopBot.Repository;
 
 namespace ShopBot.Dialogs
 {
+    public enum ProductDialogAction
+    {
+        Add,
+        Remove
+    }
+
     [Serializable]
     public class ProductDialog : IDialog<MessageBag<Product>>
     {
+        private string ProductName { get; set; }
+        private ProductDialogAction Action { get; set; }
 
+        public ProductDialog(ProductDialogAction action, string productName = null)
+        {
+            Action = action;
+            ProductName = productName;
+        }
         public async Task StartAsync(IDialogContext context)
         {
-            await DisplayActionsCard(context);
+            if (Action == ProductDialogAction.Add)
+            {
+                await DisplaySearchCard(context);
+            }
+            else if (Action == ProductDialogAction.Remove)
+            {
+                await DisplayDeleteCard(context);
+            }
+
             context.Wait(ActionSelectionReceivedAsync);
+        }
+
+        private async Task DisplaySearchCard(IDialogContext context)
+        {
+            Attachment attachment = new Attachment
+            {
+                ContentType = AdaptiveCard.ContentType,
+                Content = CardFactory.GetProductsSearchCard(ProductName)
+            };
+
+            var reply = context.MakeMessage();
+            reply.Attachments.Add(attachment);
+
+            await context.PostAsync(reply, CancellationToken.None);
+        }
+
+        private async Task DisplayDeleteCard(IDialogContext context)
+        {
+            Attachment attachment = new Attachment
+            {
+                ContentType = AdaptiveCard.ContentType,
+                Content = CardFactory.GetDeleteProductsFromBasketCard(BotStateRepository.GetAllProducts(context))
+            };
+
+            var reply = context.MakeMessage();
+            reply.Attachments.Add(attachment);
+
+            await context.PostAsync(reply, CancellationToken.None);
         }
         private async Task DisplayActionsCard(IDialogContext context)
         {

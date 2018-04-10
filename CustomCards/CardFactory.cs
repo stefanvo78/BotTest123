@@ -194,7 +194,7 @@ namespace ShopBot.CustomCards
             };
         }
 
-        private static AdaptiveCard GetProductsSearchCard()
+        public static AdaptiveCard GetProductsSearchCard(string productName = "")
         {
             return new AdaptiveCard
             {
@@ -207,12 +207,16 @@ namespace ShopBot.CustomCards
                         Size = AdaptiveTextSize.Large
                     },
                     new AdaptiveTextBlock {Text = "Please enter the Product you are looking for."},
+
                     new AdaptiveTextInput
-                    {
-                        Id = "ProductName",
-                        Placeholder = "Bike",
-                        Style = AdaptiveTextInputStyle.Text
-                    },
+                     {
+                         Id = "ProductName",
+                         Placeholder = "Bike",
+                         Style = AdaptiveTextInputStyle.Text,
+                         Value = productName //add this one
+                     },
+
+                   
                     new AdaptiveTextBlock {Text = "How do you want to sort?"},
                     new AdaptiveChoiceSetInput
                     {
