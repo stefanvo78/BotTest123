@@ -6,6 +6,7 @@ using Microsoft.Bot.Builder.Dialogs;
 using System.Net.Http;
 using ShopBot.Dialogs;
 using ShopBot;
+using ShopBot.Models;
 
 namespace Microsoft.Bot.Sample.SimpleEchoBot
 {
@@ -59,7 +60,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
             await context.PostAsync("Looking for products? Managing your Basket? Or want to checkout?");
         }
 
-        private async Task ResumeAfterProductDialog(IDialogContext context, IAwaitable<MessageBag<string>> result)
+        private async Task ResumeAfterProductDialog(IDialogContext context, IAwaitable<MessageBag<Product>> result)
         {
             var message = await result;
             switch (message.Type)
